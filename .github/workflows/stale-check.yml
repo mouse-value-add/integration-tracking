@@ -1,0 +1,88 @@
+name: Stale Integration Check
+
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const MS_PER_DAY = 86400000;
+            const CLAIMED_LABEL = 'status:claimed';
+            const STALE_LABEL = 'status:stale';
+            const STALE_THRESHOLD_DAYS = 30;
+            const NUDGE_GRACE_DAYS = 7;
+
+            const now = Date.now();
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: CLAIMED_LABEL,
+              assignee: '*',
+              per_page: 100,
+            });
+
+            for (const issue of issues) {
+              if (issue.labels.some(l => l.name === STALE_LABEL)) continue;
+
+              const lastUpdated = new Date(issue.updated_at).getTime();
+              const daysIdle = Math.floor((now - lastUpdated) / MS_PER_DAY);
+
+              if (daysIdle < STALE_THRESHOLD_DAYS) continue;
+
+              const { data: comments } = await github.rest.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+              });
+
+              const botNudge = comments.reverse().find(c =>
+                c.user && c.user.type === 'Bot' &&
+                c.body.includes('stale-check') &&
+                c.body.includes('This integration has been `status:claimed`')
+              );
+
+              if (botNudge) {
+                const nudgeAge = Math.floor((now - new Date(botNudge.created_at).getTime()) / MS_PER_DAY);
+                if (nudgeAge >= NUDGE_GRACE_DAYS) {
+                  await github.rest.issues.removeAssignees({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    assignees: issue.assignees.map(a => a.login),
+                  });
+                  await github.rest.issues.addLabels({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    labels: [STALE_LABEL],
+                  });
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    body: '<!-- stale-check --> This integration has been marked **`status:stale`** due to inactivity. Anyone with triage permissions may reclaim it by self-assigning and updating the checklist above.',
+                  });
+                  console.log(`Marked #${issue.number} as stale`);
+                }
+              } else {
+                const assigneeMentions = issue.assignees.map(a => `@${a.login}`).join(' ');
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  body: `<!-- stale-check --> ${assigneeMentions} — this integration has been **\`status:claimed\`** for ${daysIdle} days with no update. If you're still working on it, please check a box or comment below. Otherwise this issue will be marked **\`status:stale\`** in ${NUDGE_GRACE_DAYS} days.`,
+                });
+                console.log(`Nudged #${issue.number}`);
+              }
+            }

@@ -1,0 +1,107 @@
+---
+name: Integration Request
+description: Propose integrating You.com APIs into an open-source repository
+title: "[Integration] "
+labels: ["status:claimed"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to claim and track a You.com API integration into an open-source repo.
+        Check boxes as you progress. This issue is the source of truth for coordination.
+
+  - type: input
+    id: target-repo
+    attributes:
+      label: Target Repository URL
+      description: The GitHub repository where the integration will be made
+      placeholder: https://github.com/owner/repo
+    validations:
+      required: true
+
+  - type: dropdown
+    id: apis
+    attributes:
+      label: You.com API(s)
+      description: Which You.com API(s) will be integrated?
+      multiple: true
+      options:
+        - search
+        - contents
+        - research
+        - finance-research
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: Rough size of the integration effort
+      options:
+        - small
+        - medium
+        - large
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Integration Description
+      description: What will this integration do? Where in the target repo does it fit?
+      placeholder: Add You.com search capabilities to the project's CLI tool…
+    validations:
+      required: true
+
+  - type: input
+    id: contributing-url
+    attributes:
+      label: Target Repo Contributing Guidelines
+      description: Link to the target repo's CONTRIBUTING.md or similar
+      placeholder: https://github.com/owner/repo/blob/main/CONTRIBUTING.md
+    validations:
+      required: false
+
+  - type: textarea
+    id: approach
+    attributes:
+      label: Planned Approach
+      description: Brief technical plan, or leave TBD if still exploring
+      placeholder: TBD
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Status Checklist
+      description: Update these as you progress
+      options:
+        - label: Claimed this integration (self-assign)
+          required: false
+        - label: Filed issue or opened discussion in target repo
+          required: false
+        - label: Opened PR in target repo
+          required: false
+        - label: PR merged or rejected
+          required: false
+
+  - type: textarea
+    id: links
+    attributes:
+      label: Links
+      description: Cross-links to target repo issues and PRs
+      placeholder: |
+        Target repo issue:
+        Target repo PR:
+    validations:
+      required: false
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional Notes
+      description: Any other context
+    validations:
+      required: false

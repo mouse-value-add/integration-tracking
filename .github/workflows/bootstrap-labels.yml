@@ -1,0 +1,74 @@
+name: Bootstrap Labels
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync labels
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const desired = [
+              { name: 'status:claimed', color: '0E8A16', description: 'Someone is actively working on this integration' },
+              { name: 'status:pr-opened', color: 'FEF2C0', description: 'PR filed in the target repo' },
+              { name: 'status:merged', color: '0E8A16', description: 'PR merged — integration complete' },
+              { name: 'status:rejected', color: 'B60205', description: 'PR closed/rejected — integration failed' },
+              { name: 'status:stale', color: 'D93F0B', description: 'Claim abandoned, up for grabs' },
+              { name: 'api:search', color: '0052CC', description: 'Uses You.com Search API' },
+              { name: 'api:contents', color: '0052CC', description: 'Uses You.com Contents API' },
+              { name: 'api:research', color: '0052CC', description: 'Uses You.com Research API' },
+              { name: 'api:finance-research', color: '0052CC', description: 'Uses You.com Finance Research API' },
+            ];
+
+            const defaultsToRemove = ['bug', 'duplicate', 'enhancement', 'help wanted', 'invalid', 'question', 'wontfix'];
+
+            for (const label of desired) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description,
+                });
+                console.log(`Created label ${label.name}`);
+              } catch (e) {
+                if (e.status === 422) {
+                  await github.rest.issues.updateLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label.name,
+                    color: label.color,
+                    description: label.description,
+                  });
+                  console.log(`Updated label ${label.name}`);
+                } else {
+                  throw e;
+                }
+              }
+            }
+
+            for (const name of defaultsToRemove) {
+              try {
+                await github.rest.issues.deleteLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: name,
+                });
+                console.log(`Removed default label ${name}`);
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`Default label ${name} not found, skipping`);
+                } else {
+                  throw e;
+                }
+              }
+            }
