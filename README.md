@@ -15,6 +15,8 @@ This repository coordinates the integration of [You.com APIs](https://you.com/do
 
 ## Getting Started (for Humans)
 
+> **Important:** All integration records live as GitHub Issues. Do not commit files to the `integrations/` directory.
+
 ### File an Integration Request
 
 1. Go to **Issues → New Issue → Integration Request**
@@ -50,6 +52,8 @@ When working on integrations, load the coordination skill from this repository:
 ```
 skills/integration-tracking/SKILL.md
 ```
+
+> **Important:** All integration records live as GitHub Issues. Do not commit files to the `integrations/` directory — doing so will result in the PR being closed.
 
 ### Quick Agent Conventions
 
